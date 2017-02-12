@@ -21,6 +21,8 @@ void loop()
     char message[MAX_SMS_LENGTH];
     char phoneNum[MAX_PHONE_NUM_LENGTH];
 
+//When new sms received, pass to LED strip module
+
     if(checkNewSMS(phoneNum, message))
     {
       (void)ledStripNewMessage(message);
@@ -52,6 +54,7 @@ int getNextSMSIndex(void)
 
     nextSMS.rec = FALSE;
 
+    //Callback function is called for each unread text message
     if(Cellular.command(CMGLCallback, &nextSMS, "AT+CMGL=\"REC UNREAD\"\r\n") == RESP_OK)
     {
         if(nextSMS.rec)
@@ -64,7 +67,22 @@ int getNextSMSIndex(void)
     return -1;
 }
 
+bool readSMS(int index, char * phoneNumber, char * message)
+{
+    READ_SMS readSMS;
+    bool commandResponse;
 
+    readSMS.gotNumber = FALSE;
+    readSMS.phoneNumber = phoneNumber;
+    readSMS.gotMessage = FALSE;
+    readSMS.message = message;
+
+    commandResponse = Cellular.command(CMGRCallback, &readSMS, "AT+CMGR=%d\r\n", index);
+
+    return (readSMS.gotNumber && readSMS.gotMessage);
+}
+
+//Callback function only takes first unread SMS
 int CMGLCallback(int type, const char* buf, int len, NEXT_SMS* nextSMS)
 {
 
@@ -85,7 +103,7 @@ int CMGLCallback(int type, const char* buf, int len, NEXT_SMS* nextSMS)
 
 }
 
-
+//Read SMS contents and sender from message
 int CMGRCallback(int type, const char* buf, int len, READ_SMS* readSMS)
 {
 
@@ -110,20 +128,6 @@ int CMGRCallback(int type, const char* buf, int len, READ_SMS* readSMS)
 
 }
 
-bool readSMS(int index, char * phoneNumber, char * message)
-{
-    READ_SMS readSMS;
-    bool commandResponse;
-
-    readSMS.gotNumber = FALSE;
-    readSMS.phoneNumber = phoneNumber;
-    readSMS.gotMessage = FALSE;
-    readSMS.message = message;
-
-    commandResponse = Cellular.command(CMGRCallback, &readSMS, "AT+CMGR=%d\r\n", index);
-
-    return (readSMS.gotNumber && readSMS.gotMessage);
-}
 
 void deleteSMS(int smsNum)
 {
