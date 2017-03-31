@@ -580,15 +580,11 @@ static bool parseMessage(char * message)
 
   if(numNewColours > 0)
   {
-      Serial.println(numNewColours);
       numColours = numNewColours;
 
       for(int i=0; i<numColours; i++)
       {
           colours[i] = newColours[i];
-          Serial.print(colours[i].rgb, HEX);
-          Serial.print("\t");
-          Serial.println(colours[i].repeat);
       }
 
       ledEffect = newLedEffect;

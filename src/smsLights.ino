@@ -12,6 +12,9 @@ void setup()
 
     ledStripInit();
 
+    pinMode(D7, OUTPUT);
+    digitalWrite(D7, HIGH);
+    Serial.begin(9600);
 }
 
 
@@ -25,6 +28,12 @@ void loop()
 
     if(checkNewSMS(phoneNum, message))
     {
+      if(message[0] == '0' && message[1] == '0')
+      {
+        Serial.println("UTF16");
+        handleUTF16(message);
+      }
+      Serial.println(message);
       (void)ledStripNewMessage(message);
     }
 
@@ -78,6 +87,8 @@ bool readSMS(int index, char * phoneNumber, char * message)
     readSMS.message = message;
 
     commandResponse = Cellular.command(CMGRCallback, &readSMS, "AT+CMGR=%d\r\n", index);
+
+    deleteSMS(index);
 
     return (readSMS.gotNumber && readSMS.gotMessage);
 }
@@ -137,4 +148,45 @@ void deleteSMS(int smsNum)
 void deleteAllSMS(void)
 {
     Cellular.command("AT+CMGD=1,4\r\n");
+}
+
+void handleUTF16(char * message)
+{
+  int length=0;
+  int a,b = 0;
+  int ch;
+  while(message[length] != '\0')
+  {
+    length++;
+  }
+
+  while(a + 3 < length)
+  {
+
+    if(message[a] == '0' && message[a+1] == '0')
+    {
+      message [b]= (charToInt(message[a+2]) * 16) + charToInt(message[a+3]);
+    }
+    a += 4;
+    b += 1;
+  }
+
+  message[b] = '\0';
+}
+
+byte charToInt(byte b)
+{
+
+  if( b >= '0' && b <= '9')
+  {
+    return b - '0';
+  }
+  if(b >= 'A' && b <= 'F')
+  {
+    return (10 + (b-'A'));
+
+  }
+
+  return 0;
+
 }
